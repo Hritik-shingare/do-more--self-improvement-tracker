@@ -38,21 +38,31 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  const authRoutes = ['/login', '/signup'];
+  const isAuthRoute = authRoutes.includes(pathname);
+
+  // 1. If logged in and visiting auth pages (login/signup), redirect to /dashboard
+  if (user && isAuthRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // 2. If visiting auth pages (login/signup) as guest, allow access immediately (no redirect)
+  if (isAuthRoute) {
+    return supabaseResponse;
+  }
+
+  // 3. For protected routes, require authentication
+  // Note: Check exact match or sub-path (`/log/` not `/login`)
   const protectedRoutes = ['/dashboard', '/log', '/skills', '/leaderboard', '/profile'];
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+  const isProtected = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
-  const authRoutes = ['/login', '/signup'];
-  const isAuthRoute = authRoutes.some((route) => pathname === route);
-
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
 
