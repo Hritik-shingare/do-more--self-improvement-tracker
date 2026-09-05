@@ -213,23 +213,75 @@ CREATE POLICY "Users manage own friendship requests" ON friendships
 -- ============================================================
 -- TRIGGER: Auto-create user_profile on signup
 -- ============================================================
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  resolved_username TEXT;
+  resolved_display_name TEXT;
+  resolved_step_goal INT;
+  resolved_calorie_goal INT;
+  resolved_skill_goal INT;
 BEGIN
-  -- Only insert if username is provided via raw_user_meta_data
-  IF NEW.raw_user_meta_data->>'username' IS NOT NULL THEN
-    INSERT INTO user_profiles (id, username, display_name)
-    VALUES (
-      NEW.id,
-      NEW.raw_user_meta_data->>'username',
-      NEW.raw_user_meta_data->>'display_name'
-    );
-    INSERT INTO user_goals (user_id) VALUES (NEW.id);
-  END IF;
+  resolved_username := COALESCE(
+    NEW.raw_user_meta_data->>'username',
+    split_part(NEW.email, '@', 1)
+  );
+
+  resolved_display_name := COALESCE(
+    NEW.raw_user_meta_data->>'display_name',
+    resolved_username
+  );
+
+  resolved_step_goal := COALESCE(
+    NULLIF(NEW.raw_user_meta_data->>'step_goal', '')::INT,
+    8000
+  );
+
+  resolved_calorie_goal := COALESCE(
+    NULLIF(NEW.raw_user_meta_data->>'calorie_burn_goal', '')::INT,
+    500
+  );
+
+  resolved_skill_goal := COALESCE(
+    NULLIF(NEW.raw_user_meta_data->>'weekly_skill_minutes_goal', '')::INT,
+    300
+  );
+
+  -- 1. Create profile
+  INSERT INTO public.user_profiles (id, username, display_name)
+  VALUES (
+    NEW.id,
+    resolved_username,
+    resolved_display_name
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    username = EXCLUDED.username,
+    display_name = EXCLUDED.display_name;
+
+  -- 2. Create goals
+  INSERT INTO public.user_goals (user_id, step_goal, calorie_burn_goal, weekly_skill_minutes_goal)
+  VALUES (
+    NEW.id,
+    resolved_step_goal,
+    resolved_calorie_goal,
+    resolved_skill_goal
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    step_goal = EXCLUDED.step_goal,
+    calorie_burn_goal = EXCLUDED.calorie_burn_goal,
+    weekly_skill_minutes_goal = EXCLUDED.weekly_skill_minutes_goal;
+
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+

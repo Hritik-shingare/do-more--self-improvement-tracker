@@ -11,6 +11,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>('account');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Account fields
@@ -53,6 +54,9 @@ export default function SignupPage() {
         data: {
           username: username.toLowerCase(),
           display_name: displayName || username,
+          step_goal: stepGoal,
+          calorie_burn_goal: calorieGoal,
+          weekly_skill_minutes_goal: skillMinutesGoal,
         },
       },
     });
@@ -63,27 +67,11 @@ export default function SignupPage() {
       return;
     }
 
-    // If profile was auto-created via trigger, update goals
-    if (data.user) {
-      // Wait a moment for the trigger to fire
-      await new Promise((r) => setTimeout(r, 800));
-
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: data.user.id,
-          username: username.toLowerCase(),
-          display_name: displayName || username,
-        });
-
-      if (!profileError) {
-        await supabase.from('user_goals').upsert({
-          user_id: data.user.id,
-          step_goal: stepGoal,
-          calorie_burn_goal: calorieGoal,
-          weekly_skill_minutes_goal: skillMinutesGoal,
-        });
-      }
+    // If email confirmation is required by Supabase project settings
+    if (data.user && !data.session) {
+      setSuccessMessage('Account created! Please check your email inbox to confirm your address, then sign in.');
+      setLoading(false);
+      return;
     }
 
     router.push('/dashboard');
@@ -149,6 +137,20 @@ export default function SignupPage() {
               color: 'var(--danger)', fontSize: '0.875rem', marginBottom: '1.25rem',
             }}>
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div style={{
+              background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
+              borderRadius: 'var(--radius-md)', padding: '1rem',
+              color: 'var(--success)', fontSize: '0.875rem', marginBottom: '1.25rem',
+              lineHeight: 1.5,
+            }}>
+              <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{successMessage}</p>
+              <Link href="/login" style={{ color: 'var(--primary-light)', textDecoration: 'underline' }}>
+                Go to Sign In →
+              </Link>
             </div>
           )}
 
