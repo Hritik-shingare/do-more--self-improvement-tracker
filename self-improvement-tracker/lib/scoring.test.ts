@@ -132,20 +132,20 @@ describe('getWeekStart', () => {
     const wednesday = new Date('2024-01-10T12:00:00');
     const weekStart = getWeekStart(wednesday);
     expect(weekStart.getDay()).toBe(1); // 1 = Monday
-    expect(weekStart.toISOString().split('T')[0]).toBe('2024-01-08');
+    expect(toDateString(weekStart)).toBe('2024-01-08');
   });
 
   test('returns previous Monday for Sunday', () => {
     const sunday = new Date('2024-01-14T12:00:00');
     const weekStart = getWeekStart(sunday);
     expect(weekStart.getDay()).toBe(1);
-    expect(weekStart.toISOString().split('T')[0]).toBe('2024-01-08');
+    expect(toDateString(weekStart)).toBe('2024-01-08');
   });
 
   test('returns same Monday for Monday', () => {
     const monday = new Date('2024-01-08T12:00:00');
     const weekStart = getWeekStart(monday);
-    expect(weekStart.toISOString().split('T')[0]).toBe('2024-01-08');
+    expect(toDateString(weekStart)).toBe('2024-01-08');
   });
 });
 
