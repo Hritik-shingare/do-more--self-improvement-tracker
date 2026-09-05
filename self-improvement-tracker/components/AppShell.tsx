@@ -2,57 +2,37 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Home, Flame, Award, Trophy, User, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+
+const MotionLink = motion.create(Link);
 
 const navItems = [
   {
     href: '/dashboard',
     label: 'Home',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-    ),
+    icon: Home,
   },
   {
     href: '/log',
     label: 'Log',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-      </svg>
-    ),
+    icon: Flame,
   },
   {
     href: '/skills',
     label: 'Skills',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    ),
+    icon: Award,
   },
   {
     href: '/leaderboard',
     label: 'Leaderboard',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
-    ),
+    icon: Trophy,
   },
   {
     href: '/profile',
     label: 'Profile',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-    ),
+    icon: User,
   },
 ];
 
@@ -70,69 +50,123 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
       {/* Sidebar (desktop) */}
-      <aside className="sidebar">
+      <aside className="sidebar" style={{ background: '#121212', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
         <div className="sidebar-logo">
-          <div style={{
-            width: 36, height: 36, borderRadius: 'var(--radius-md)',
-            background: 'var(--gradient-primary)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            boxShadow: 'var(--shadow-glow)',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-              <polyline points="17 6 23 6 23 12"/>
-            </svg>
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--accent-lime)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 16px rgba(212, 255, 63, 0.35)',
+              color: '#000000',
+              fontWeight: 900,
+            }}
+          >
+            P
           </div>
-          <span style={{ fontWeight: 800, fontSize: '1.125rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            LevelUp
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: 900, fontSize: '1.2rem', color: '#FFFFFF', letterSpacing: '-0.03em' }}>
+              DO MORE
+            </span>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              PULSE TRACKER
+            </span>
+          </div>
         </div>
 
         <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`sidebar-item ${pathname === item.href ? 'active' : ''}`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const IconComponent = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`sidebar-item ${isActive ? 'active' : ''}`}
+                style={{
+                  background: isActive ? 'rgba(212, 255, 63, 0.1)' : 'transparent',
+                  color: isActive ? 'var(--accent-lime)' : 'var(--text-muted)',
+                  border: isActive ? '1px solid rgba(212, 255, 63, 0.25)' : '1px solid transparent',
+                  borderRadius: '14px',
+                }}
+              >
+                <IconComponent size={20} strokeWidth={isActive ? 2.5 : 2} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         <button
           onClick={handleLogout}
           className="btn btn-ghost"
-          style={{ width: '100%', justifyContent: 'flex-start', gap: '0.75rem', marginTop: 'auto' }}
+          style={{ width: '100%', justifyContent: 'flex-start', gap: '0.75rem', marginTop: 'auto', borderRadius: '14px' }}
           id="app-logout-btn"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
+          <LogOut size={18} strokeWidth={2} />
           Sign out
         </button>
       </aside>
 
       {/* Main content */}
-      <main className="page-content">
-        {children}
-      </main>
+      <main className="page-content">{children}</main>
 
-      {/* Bottom nav (mobile) */}
-      <nav className="bottom-nav">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`nav-item ${pathname === item.href ? 'active' : ''}`}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </Link>
-        ))}
+      {/* Bottom navigation (mobile) — Exact Pulse match: icon-only, active in lime with pill bar */}
+      <nav
+        className="bottom-nav"
+        style={{
+          background: 'rgba(10, 10, 10, 0.95)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+          height: '68px',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+        }}
+      >
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          const IconComponent = item.icon;
+          return (
+            <MotionLink
+              key={item.href}
+              href={item.href}
+              whileTap={{ scale: 0.82 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+              aria-label={item.label}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 52,
+                height: 52,
+                position: 'relative',
+                color: isActive ? 'var(--accent-lime)' : '#8A8A8A',
+                textDecoration: 'none',
+              }}
+            >
+              <IconComponent size={24} strokeWidth={isActive ? 2.6 : 1.9} />
+              {/* Pulse Active Indicator Dot/Pill underneath icon */}
+              {isActive && (
+                <motion.div
+                  layoutId="bottomNavIndicator"
+                  style={{
+                    position: 'absolute',
+                    bottom: 4,
+                    width: 16,
+                    height: 3,
+                    borderRadius: 9999,
+                    background: 'var(--accent-lime)',
+                    boxShadow: '0 0 8px rgba(212, 255, 63, 0.6)',
+                  }}
+                />
+              )}
+            </MotionLink>
+          );
+        })}
       </nav>
     </div>
   );

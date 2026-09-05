@@ -217,52 +217,74 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth
 AS $$
 DECLARE
-  resolved_username TEXT;
+  base_username TEXT;
+  final_username TEXT;
   resolved_display_name TEXT;
   resolved_step_goal INT;
   resolved_calorie_goal INT;
   resolved_skill_goal INT;
+  suffix INT := 1;
 BEGIN
-  resolved_username := COALESCE(
-    NEW.raw_user_meta_data->>'username',
+  -- 1. Extract base username from metadata or email prefix
+  base_username := LOWER(COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'username'), ''),
     split_part(NEW.email, '@', 1)
-  );
+  ));
 
+  -- Sanitize username (alphanumeric and underscores only)
+  base_username := REGEXP_REPLACE(base_username, '[^a-z0-9_]', '_', 'g');
+  IF LENGTH(base_username) < 3 THEN
+    base_username := 'user_' || SUBSTRING(REPLACE(NEW.id::text, '-', ''), 1, 6);
+  END IF;
+
+  final_username := base_username;
+
+  -- Ensure username uniqueness: if taken by another user, append numbers
+  WHILE EXISTS (SELECT 1 FROM public.user_profiles WHERE username = final_username AND id != NEW.id) LOOP
+    final_username := SUBSTRING(base_username, 1, 18) || '_' || suffix;
+    suffix := suffix + 1;
+  END LOOP;
+
+  -- 2. Extract display name
   resolved_display_name := COALESCE(
-    NEW.raw_user_meta_data->>'display_name',
-    resolved_username
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+    final_username
   );
 
-  resolved_step_goal := COALESCE(
-    NULLIF(NEW.raw_user_meta_data->>'step_goal', '')::INT,
-    8000
-  );
+  -- 3. Extract goals with safe casting
+  BEGIN
+    resolved_step_goal := COALESCE((NEW.raw_user_meta_data->>'step_goal')::INT, 8000);
+  EXCEPTION WHEN OTHERS THEN
+    resolved_step_goal := 8000;
+  END;
 
-  resolved_calorie_goal := COALESCE(
-    NULLIF(NEW.raw_user_meta_data->>'calorie_burn_goal', '')::INT,
-    500
-  );
+  BEGIN
+    resolved_calorie_goal := COALESCE((NEW.raw_user_meta_data->>'calorie_burn_goal')::INT, 500);
+  EXCEPTION WHEN OTHERS THEN
+    resolved_calorie_goal := 500;
+  END;
 
-  resolved_skill_goal := COALESCE(
-    NULLIF(NEW.raw_user_meta_data->>'weekly_skill_minutes_goal', '')::INT,
-    300
-  );
+  BEGIN
+    resolved_skill_goal := COALESCE((NEW.raw_user_meta_data->>'weekly_skill_minutes_goal')::INT, 300);
+  EXCEPTION WHEN OTHERS THEN
+    resolved_skill_goal := 300;
+  END;
 
-  -- 1. Create profile
+  -- 4. Insert or update user profile
   INSERT INTO public.user_profiles (id, username, display_name)
   VALUES (
     NEW.id,
-    resolved_username,
+    final_username,
     resolved_display_name
   )
   ON CONFLICT (id) DO UPDATE SET
     username = EXCLUDED.username,
     display_name = EXCLUDED.display_name;
 
-  -- 2. Create goals
+  -- 5. Insert or update user goals
   INSERT INTO public.user_goals (user_id, step_goal, calorie_burn_goal, weekly_skill_minutes_goal)
   VALUES (
     NEW.id,
@@ -275,6 +297,10 @@ BEGIN
     calorie_burn_goal = EXCLUDED.calorie_burn_goal,
     weekly_skill_minutes_goal = EXCLUDED.weekly_skill_minutes_goal;
 
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Never fail user creation in auth.users
+  RAISE WARNING 'handle_new_user error: %', SQLERRM;
   RETURN NEW;
 END;
 $$;

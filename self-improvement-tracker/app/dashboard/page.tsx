@@ -2,11 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  Footprints,
+  Flame,
+  Clock,
+  Plus,
+  Utensils,
+  Dumbbell,
+  Check,
+  ChevronRight,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { computeWeeklyScore, getCurrentWeekDates, toDateString } from '@/lib/scoring';
 import type { DailyLog, FoodEntry, SkillTimeLog, WeeklyScore, UserGoals, UserProfile } from '@/types/database';
-import ScoreRing from '@/components/ScoreRing';
+import CircularGauge from '@/components/CircularGauge';
+import HighlightedCard from '@/components/HighlightedCard';
 import ScoreBreakdownBar from '@/components/ScoreBreakdownBar';
+import StreakFlame from '@/components/StreakFlame';
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -16,6 +29,8 @@ export default function DashboardPage() {
   const [weeklyScore, setWeeklyScore] = useState<WeeklyScore | null>(null);
   const [goals, setGoals] = useState<UserGoals | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeDaysCount, setActiveDaysCount] = useState<number>(0);
+  const [activeTimeTab, setActiveTimeTab] = useState<'week' | 'day' | 'month'>('week');
   const today = toDateString(new Date());
 
   const loadData = useCallback(async () => {
@@ -80,6 +95,8 @@ export default function DashboardPage() {
 
       if (!logs) return;
 
+      setActiveDaysCount(logs.length);
+
       const avgSteps = logs.reduce((s, l) => s + (l.steps || 0), 0) / 7;
       const avgCalories = logs.reduce((s, l) => s + (l.calories_burned || 0), 0) / 7;
       const totalMinutes = (skillTimeLogs || []).reduce((s, l) => s + l.minutes_spent, 0);
@@ -100,152 +117,484 @@ export default function DashboardPage() {
 
   if (loading) return <DashboardSkeleton />;
 
-  const greeting = getGreeting();
+  const displayName = profile?.display_name || profile?.username || 'Emon';
   const totalSkillMinutesToday = skillLogs.reduce((s, l) => s + l.minutes_spent, 0);
   const totalFoodCalories = foodEntries.reduce((s, e) => s + e.estimated_calories, 0);
   const hasLoggedToday = !!todayLog;
+  const currentTotalScore = liveScore?.totalScore ?? weeklyScore?.total_score ?? 0;
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }} className="animate-fade-in-up">
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem', marginBottom: '0.25rem' }}>{greeting}</p>
-        <h1 style={{ color: 'var(--text-primary)' }}>
-          {profile?.display_name || profile?.username || 'Welcome back'} 👋
-        </h1>
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      style={{ maxWidth: 580, margin: '0 auto', paddingBottom: '2.5rem' }}
+    >
+      {/* ── Top Header (Exact Match to Screen 2: "Hi Emon 👋") ── */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: 'clamp(1.75rem, 5vw, 2.2rem)',
+              fontWeight: 800,
+              color: '#FFFFFF',
+              letterSpacing: '-0.03em',
+              lineHeight: 1.15,
+            }}
+          >
+            Hi {displayName} 👋
+          </h1>
+          <p
+            style={{
+              color: 'var(--text-muted)',
+              fontSize: '0.92rem',
+              fontWeight: 500,
+              marginTop: '0.2rem',
+            }}
+          >
+            Ready to crush your goals today?
+          </p>
+        </div>
 
-      {/* Score Ring + Breakdown */}
-      <div className="card card-gradient animate-fade-in-up delay-100" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem', fontWeight: 500 }}>
-          THIS WEEK&apos;S SCORE
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-          <ScoreRing score={liveScore?.totalScore ?? weeklyScore?.total_score ?? 0} size={160} />
+        {/* Action button on right: Plus button in solid lime */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div
+            style={{
+              background: '#161616',
+              borderRadius: '9999px',
+              padding: '0.4rem 0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <StreakFlame days={activeDaysCount || (hasLoggedToday ? 1 : 0)} size={20} />
+          </div>
 
-          {liveScore && (
-            <div style={{ width: '100%' }}>
-              <ScoreBreakdownBar
-                fitness={liveScore.fitnessScore}
-                skill={liveScore.skillScore}
-                nutrition={liveScore.nutritionScore}
-              />
-            </div>
-          )}
+          <Link
+            href="/log"
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: '50%',
+              background: 'var(--accent-lime)',
+              color: '#000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              boxShadow: '0 4px 16px rgba(212, 255, 63, 0.3)',
+            }}
+            id="dashboard-header-add-btn"
+            aria-label="Add Log"
+          >
+            <Plus size={22} strokeWidth={3} />
+          </Link>
         </div>
       </div>
 
-      {/* Today's Stats Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <StatCard
-          label="Steps Today"
-          value={todayLog?.steps?.toLocaleString() ?? '—'}
-          goal={goals?.step_goal}
-          icon="👟"
-          progress={todayLog && goals ? (todayLog.steps / goals.step_goal) * 100 : 0}
-          className="animate-fade-in-up delay-200"
-        />
-        <StatCard
-          label="Calories Burned"
-          value={todayLog?.calories_burned?.toLocaleString() ?? '—'}
-          goal={goals?.calorie_burn_goal}
-          icon="🔥"
-          progress={todayLog && goals ? (todayLog.calories_burned / goals.calorie_burn_goal) * 100 : 0}
-          className="animate-fade-in-up delay-300"
-        />
-        <StatCard
-          label="Skill Minutes"
-          value={totalSkillMinutesToday > 0 ? `${totalSkillMinutesToday}m` : '—'}
-          icon="🎯"
-          progress={goals ? (totalSkillMinutesToday / (goals.weekly_skill_minutes_goal / 7)) * 100 : 0}
-          className="animate-fade-in-up delay-300"
-        />
-        <StatCard
-          label="Food Calories"
-          value={totalFoodCalories > 0 ? `${totalFoodCalories.toLocaleString()} kcal` : '—'}
-          icon="🥗"
-          progress={foodEntries.length > 0 ? 100 : 0}
-          className="animate-fade-in-up delay-400"
-        />
+      {/* ── Highlighted Feature Card (Reference Screen 2: Workout Plan lime card) ── */}
+      <div style={{ marginBottom: '1.75rem' }}>
+        {!hasLoggedToday ? (
+          <HighlightedCard
+            badge="Action Plan"
+            title="Log Today's Activity"
+            subtitle="Record your steps, burned calories & deliberate skill practice."
+            icon={<Dumbbell size={22} strokeWidth={2.4} />}
+            actionText="Start Logging"
+            actionHref="/log"
+          />
+        ) : (
+          <HighlightedCard
+            badge="Today's Momentum"
+            title="Active Streak On Fire! 🔥"
+            subtitle={`${todayLog?.steps?.toLocaleString() ?? 0} steps and ${todayLog?.calories_burned ?? 0} kcal logged.`}
+            icon={<Flame size={22} strokeWidth={2.4} />}
+            actionText="Update Today's Log"
+            actionHref="/log"
+          />
+        )}
       </div>
 
-      {/* Log Today CTA */}
-      <div className="animate-fade-in-up delay-400">
-        {!hasLoggedToday ? (
-          <div className="card" style={{
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%)',
-            border: '1px solid rgba(99,102,241,0.3)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: '1rem', textAlign: 'center', padding: '2rem',
-          }}>
-            <span style={{ fontSize: '2.5rem' }}>📝</span>
-            <div>
-              <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>No log yet today</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
-                Log your activity to keep your streak going!
-              </p>
-            </div>
-            <Link href="/log" className="btn btn-primary btn-lg animate-pulse-glow" id="dashboard-log-today-btn">
-              Log Today →
-            </Link>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Link href="/log" className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} id="dashboard-edit-log-btn">
-              ✏️ Edit Today&apos;s Log
-            </Link>
-            <Link href="/leaderboard" className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} id="dashboard-leaderboard-btn">
-              🏆 Leaderboard
-            </Link>
+      {/* ── Score & Activity Section with Segmented Control (Screen 3 style) ── */}
+      <div
+        className="card"
+        style={{
+          background: '#161616',
+          borderRadius: '24px',
+          padding: '1.75rem 1.5rem',
+          marginBottom: '1.75rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        {/* Segmented Toggle Control (Day / Week / Month) */}
+        <div className="segmented-control" style={{ marginBottom: '1.75rem' }}>
+          <button
+            onClick={() => setActiveTimeTab('day')}
+            className={`segmented-item ${activeTimeTab === 'day' ? 'active' : ''}`}
+          >
+            Day
+          </button>
+          <button
+            onClick={() => setActiveTimeTab('week')}
+            className={`segmented-item ${activeTimeTab === 'week' ? 'active' : ''}`}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => setActiveTimeTab('month')}
+            className={`segmented-item ${activeTimeTab === 'month' ? 'active' : ''}`}
+          >
+            Month
+          </button>
+        </div>
+
+        {/* Circular Progress Gauge (Screen 3 exact style) */}
+        <CircularGauge
+          value={Math.round(currentTotalScore)}
+          max={100}
+          size={196}
+          strokeWidth={15}
+          labelTop={activeTimeTab === 'week' ? 'This Week' : activeTimeTab === 'day' ? 'Today' : 'This Month'}
+          labelBottom="Score"
+          goalLabel="Goal: 100 points"
+        />
+
+        {/* Breakdown bars underneath */}
+        {liveScore && (
+          <div style={{ width: '100%', marginTop: '1.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.25rem' }}>
+            <ScoreBreakdownBar
+              fitness={liveScore.fitnessScore}
+              skill={liveScore.skillScore}
+              nutrition={liveScore.nutritionScore}
+            />
           </div>
         )}
       </div>
-    </div>
-  );
-}
 
-function StatCard({ label, value, goal, icon, progress, className = '' }: {
-  label: string; value: string; goal?: number; icon: string;
-  progress: number; className?: string;
-}) {
-  return (
-    <div className={`stat-card ${className}`}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div className="stat-label">{label}</div>
-          <div className="stat-value" style={{ marginTop: '0.25rem' }}>{value}</div>
-          {goal && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
-              / {goal.toLocaleString()}
-            </div>
-          )}
+      {/* ── My Activity (3 Mini-Card Row from Screen 2 & 3) ── */}
+      <div style={{ marginBottom: '1.75rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '0.85rem',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.08rem',
+              fontWeight: 700,
+              color: '#FFFFFF',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            My Activity
+          </h2>
+          <Link
+            href="/log"
+            style={{
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              color: 'var(--accent-lime)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            View All <ChevronRight size={14} />
+          </Link>
         </div>
-        <span style={{ fontSize: '1.5rem' }}>{icon}</span>
+
+        <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+          {/* Card 1: Steps */}
+          <div className="mini-stat-card">
+            <div className="mini-stat-icon-circle">
+              <Footprints size={17} strokeWidth={2.4} />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Steps
+            </span>
+            <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
+              {todayLog?.steps ? todayLog.steps.toLocaleString() : '—'}
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              {goals?.step_goal ? `Goal ${goals.step_goal.toLocaleString()}` : 'Today'}
+            </span>
+          </div>
+
+          {/* Card 2: Calories */}
+          <div className="mini-stat-card">
+            <div className="mini-stat-icon-circle">
+              <Flame size={17} strokeWidth={2.4} />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Calories
+            </span>
+            <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
+              {todayLog?.calories_burned ? todayLog.calories_burned.toLocaleString() : '—'}
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              kcal
+            </span>
+          </div>
+
+          {/* Card 3: Active Time / Skills */}
+          <div className="mini-stat-card">
+            <div className="mini-stat-icon-circle">
+              <Clock size={17} strokeWidth={2.4} />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Active Time
+            </span>
+            <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
+              {totalSkillMinutesToday > 0 ? `${totalSkillMinutesToday}m` : '—'}
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              skills
+            </span>
+          </div>
+        </div>
       </div>
-      <div className="progress-bar" style={{ marginTop: '0.75rem' }}>
-        <div className="progress-bar-fill" style={{ width: `${Math.min(100, progress)}%` }} />
+
+      {/* ── Recent Activity / Workouts (Exact match to Screen 3 bottom list) ── */}
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '0.85rem',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.08rem',
+              fontWeight: 700,
+              color: '#FFFFFF',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Recent Activity
+          </h2>
+          <Link
+            href="/skills"
+            style={{
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              color: 'var(--accent-lime)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            View All <ChevronRight size={14} />
+          </Link>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* Daily Fitness Activity Item */}
+          <div
+            className="card"
+            style={{
+              background: '#161616',
+              borderRadius: '18px',
+              padding: '1rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-lime)',
+                  flexShrink: 0,
+                }}
+              >
+                <Dumbbell size={22} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '2px' }}>
+                  Daily Fitness & Cardio
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  {todayLog?.steps ? `${todayLog.steps.toLocaleString()} steps` : 'Not logged yet'} • {todayLog?.calories_burned ? `${todayLog.calories_burned} kcal` : '0 kcal'}
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: hasLoggedToday ? 'var(--accent-lime)' : 'rgba(255, 255, 255, 0.08)',
+                color: '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {hasLoggedToday ? (
+                <Check size={16} strokeWidth={3} />
+              ) : (
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>—</span>
+              )}
+            </div>
+          </div>
+
+          {/* Skill Practice Item */}
+          <div
+            className="card"
+            style={{
+              background: '#161616',
+              borderRadius: '18px',
+              padding: '1rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-lime)',
+                  flexShrink: 0,
+                }}
+              >
+                <Clock size={22} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '2px' }}>
+                  Skill Learning Practice
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  {totalSkillMinutesToday > 0 ? `${totalSkillMinutesToday} min today` : 'No practice logged today'}
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: totalSkillMinutesToday > 0 ? 'var(--accent-lime)' : 'rgba(255, 255, 255, 0.08)',
+                color: '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {totalSkillMinutesToday > 0 ? (
+                <Check size={16} strokeWidth={3} />
+              ) : (
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>—</span>
+              )}
+            </div>
+          </div>
+
+          {/* Food Log Item */}
+          <div
+            className="card"
+            style={{
+              background: '#161616',
+              borderRadius: '18px',
+              padding: '1rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-lime)',
+                  flexShrink: 0,
+                }}
+              >
+                <Utensils size={20} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '2px' }}>
+                  Nutrition Logging
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  {foodEntries.length > 0 ? `${foodEntries.length} items • ${totalFoodCalories} kcal` : 'No meals logged today'}
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: foodEntries.length > 0 ? 'var(--accent-lime)' : 'rgba(255, 255, 255, 0.08)',
+                color: '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {foodEntries.length > 0 ? (
+                <Check size={16} strokeWidth={3} />
+              ) : (
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>—</span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <div className="skeleton" style={{ height: 32, width: '60%', marginBottom: '0.5rem', borderRadius: 8 }} />
-      <div className="skeleton" style={{ height: 20, width: '40%', marginBottom: '2rem', borderRadius: 8 }} />
-      <div className="skeleton" style={{ height: 280, borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem' }} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 110, borderRadius: 'var(--radius-lg)' }} />)}
+    <div style={{ maxWidth: 580, margin: '0 auto' }}>
+      <div className="skeleton" style={{ height: 32, width: '45%', marginBottom: '0.5rem', borderRadius: 12 }} />
+      <div className="skeleton" style={{ height: 18, width: '60%', marginBottom: '1.5rem', borderRadius: 8 }} />
+      <div className="skeleton" style={{ height: 180, borderRadius: 24, marginBottom: '1.75rem' }} />
+      <div className="skeleton" style={{ height: 300, borderRadius: 24, marginBottom: '1.75rem' }} />
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.75rem' }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="skeleton" style={{ flex: 1, height: 110, borderRadius: 18 }} />
+        ))}
       </div>
-      <div className="skeleton" style={{ height: 120, borderRadius: 'var(--radius-lg)' }} />
     </div>
   );
-}
-
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning,';
-  if (hour < 17) return 'Good afternoon,';
-  return 'Good evening,';
 }

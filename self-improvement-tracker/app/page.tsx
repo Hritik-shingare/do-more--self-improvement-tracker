@@ -1,117 +1,237 @@
+'use client';
+
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Menu, Bell, Flame, Activity, Clock, ShieldCheck, Dumbbell, Award } from 'lucide-react';
+import HeroCarousel from '@/components/HeroCarousel';
+import SolidCtaButton from '@/components/SolidCtaButton';
+import CircularGauge from '@/components/CircularGauge';
 
 export default function HomePage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', overflow: 'hidden' }}>
-      {/* Background orbs */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}>
-        <div style={{
-          position: 'absolute', top: '-20%', left: '-10%', width: '50vw', height: '50vw',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 60%)',
-          borderRadius: '50%',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '-20%', right: '-10%', width: '45vw', height: '45vw',
-          background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 60%)',
-          borderRadius: '50%',
-        }} />
-      </div>
-
-      {/* Header */}
-      <header style={{
-        position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', padding: '1.25rem 2rem', borderBottom: '1px solid var(--border)',
-        backdropFilter: 'blur(12px)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 'var(--radius-md)',
-            background: 'var(--gradient-primary)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            boxShadow: 'var(--shadow-glow)',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-              <polyline points="17 6 23 6 23 12"/>
-            </svg>
+    <div style={{ minHeight: '100vh', background: '#0A0A0A', color: '#FFFFFF' }}>
+      {/* ── Rotating Photo Carousel Hero Section ── */}
+      <HeroCarousel intervalMs={4500}>
+        {/* Top Navigation Bar */}
+        <header
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '1.25rem 1.5rem',
+            zIndex: 20,
+          }}
+        >
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <Menu size={20} color="#FFFFFF" />
           </div>
-          <span style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            LevelUp
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <Link href="/login" className="btn btn-ghost">Sign in</Link>
-          <Link href="/signup" className="btn btn-primary" id="landing-signup-btn">Get Started Free</Link>
-        </div>
-      </header>
 
-      {/* Hero */}
-      <main style={{ position: 'relative', zIndex: 1 }}>
-        <section style={{ textAlign: 'center', padding: 'clamp(4rem, 10vw, 8rem) 1rem 4rem' }}>
-          <div className="badge badge-primary animate-fade-in" style={{ marginBottom: '1.5rem', display: 'inline-flex', padding: '0.35rem 1rem', fontSize: '0.875rem' }}>
-            🚀 Gamify your self-improvement
-          </div>
-          <h1 className="animate-fade-in-up" style={{ maxWidth: 720, margin: '0 auto 1.25rem', letterSpacing: '-0.03em' }}>
-            Track Progress.<br />
-            <span style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Beat Your Friends.
-            </span>
-          </h1>
-          <p className="animate-fade-in-up delay-100" style={{
-            maxWidth: 560, margin: '0 auto 2.5rem', fontSize: '1.125rem',
-            color: 'var(--text-secondary)', lineHeight: 1.7,
-          }}>
-            Log your fitness, nutrition, and skill-learning every day. Get a weekly score. Compete on the leaderboard with friends.
-          </p>
-          <div className="animate-fade-in-up delay-200" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/signup" className="btn btn-primary btn-lg animate-pulse-glow" id="landing-hero-cta">
-              Start for free →
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <Link
+              href="/login"
+              style={{
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                textDecoration: 'none',
+                padding: '0.4rem 0.8rem',
+              }}
+            >
+              Sign In
             </Link>
-            <Link href="/login" className="btn btn-ghost btn-lg">
-              Sign in
+
+            <Link
+              href="/signup"
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                textDecoration: 'none',
+                color: '#FFFFFF',
+              }}
+              aria-label="Notifications"
+            >
+              <Bell size={20} />
             </Link>
           </div>
-        </section>
+        </header>
 
-        {/* Feature cards */}
-        <section style={{ padding: '0 1rem 6rem', maxWidth: 1000, margin: '0 auto' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1.25rem',
-          }}>
-            {[
-              { icon: '💪', title: 'Fitness Tracking', desc: 'Log steps, runs, and calories burned daily. See your fitness score grow week over week.' },
-              { icon: '🎯', title: 'Skill Progress', desc: 'Create custom skills with sub-areas. Track learning time and self-reported progress with sliders.' },
-              { icon: '🥗', title: 'Nutrition Logging', desc: 'Log what you eat each day. Stay consistent with food logging to maximize your nutrition score.' },
-              { icon: '🏆', title: 'Friend Leaderboard', desc: 'Add friends and compete on a weekly leaderboard. See who\'s climbing and who\'s falling behind.' },
-              { icon: '📊', title: 'Weekly Score', desc: 'A composite score (0–100) weighing fitness, skills, and nutrition — recomputed every week.' },
-              { icon: '📈', title: 'Trend History', desc: 'Track your score history over weeks to see your long-term improvement trajectory.' },
-            ].map((f, i) => (
-              <div key={f.title} className={`card card-gradient animate-fade-in-up`}
-                style={{ animationDelay: `${i * 80 + 200}ms` }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.875rem' }}>{f.icon}</div>
-                <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{f.title}</h3>
-                <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)' }}>{f.desc}</p>
-              </div>
-            ))}
+        {/* Hero Headline & CTA (matching Screen 1) */}
+        <div
+          style={{
+            padding: '2.5rem 1.5rem 2rem',
+            maxWidth: 540,
+            margin: '0 auto',
+            width: '100%',
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h1
+              style={{
+                fontSize: 'clamp(2.5rem, 7vw, 3.6rem)',
+                fontWeight: 900,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                textTransform: 'uppercase',
+                color: '#FFFFFF',
+                marginBottom: '0.75rem',
+                textShadow: '0 2px 16px rgba(0, 0, 0, 0.75)',
+              }}
+            >
+              PUSH <br />
+              <span style={{ color: 'var(--accent-lime)' }}>YOUR LIMITS</span> <br />
+              EVERY DAY
+            </h1>
+
+            <p
+              style={{
+                fontSize: '1.05rem',
+                color: 'var(--text-secondary)',
+                fontWeight: 500,
+                letterSpacing: '-0.01em',
+                marginBottom: '1.75rem',
+              }}
+            >
+              Stronger Body. Stronger You.
+            </p>
+
+            <div style={{ maxWidth: 280 }}>
+              <SolidCtaButton href="/signup" size="lg" id="landing-hero-cta">
+                Get Started
+              </SolidCtaButton>
+            </div>
+          </motion.div>
+        </div>
+      </HeroCarousel>
+
+      {/* ── Feature Introduction Section ── */}
+      <section
+        style={{
+          maxWidth: 520,
+          margin: '2rem auto 4rem',
+          padding: '0 1.25rem',
+          position: 'relative',
+          zIndex: 20,
+        }}
+      >
+
+        {/* Feature Cards Grid (Seamless App Introduction) */}
+        <div
+          style={{
+            marginTop: '2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              background: '#161616',
+              borderRadius: '20px',
+              padding: '1.35rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+            }}
+          >
+            <div
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: '50%',
+                background: 'rgba(212, 255, 63, 0.1)',
+                color: 'var(--accent-lime)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Dumbbell size={22} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.2rem' }}>
+                Daily Fitness & Nutrition
+              </h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                Track steps, calories burned, and food logging consistency with real-time scoring.
+              </p>
+            </div>
           </div>
-        </section>
 
-        {/* CTA bottom */}
-        <section style={{
-          textAlign: 'center', padding: '4rem 1rem 6rem',
-          borderTop: '1px solid var(--border)',
-        }}>
-          <h2 className="animate-fade-in-up" style={{ marginBottom: '1rem' }}>Ready to level up?</h2>
-          <p className="animate-fade-in-up delay-100" style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '1.0625rem' }}>
-            Join for free. No credit card required.
+          <div
+            className="card"
+            style={{
+              background: '#161616',
+              borderRadius: '20px',
+              padding: '1.35rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+            }}
+          >
+            <div
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: '50%',
+                background: 'rgba(212, 255, 63, 0.1)',
+                color: 'var(--accent-lime)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Award size={22} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.2rem' }}>
+                Skill Progress & Friends Leaderboard
+              </h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                Measure deliberate practice and climb the weekly leaderboard with your circle.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <div style={{ marginTop: '2.5rem', textAlign: 'center' }}>
+          <SolidCtaButton href="/signup" size="lg" fullWidth id="landing-bottom-cta">
+            Join DO MORE Free
+          </SolidCtaButton>
+          <p style={{ marginTop: '0.85rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+            Already tracking?{' '}
+            <Link href="/login" style={{ color: 'var(--accent-lime)', fontWeight: 600 }}>
+              Sign In
+            </Link>
           </p>
-          <Link href="/signup" className="btn btn-primary btn-lg animate-fade-in-up delay-200" id="landing-bottom-cta">
-            Create your account →
-          </Link>
-        </section>
-      </main>
+        </div>
+      </section>
     </div>
   );
 }
